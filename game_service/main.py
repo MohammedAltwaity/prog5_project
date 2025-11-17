@@ -28,6 +28,26 @@ async def start_game(request: dict):
     print(f"Game started: {room_id} with {players}")
     return {"message": "started"}
 
+@app.post("/restart")
+async def restart_game(request: dict):
+    """Restart a finished game with the same players"""
+    room_id = request["room_id"]
+    if room_id not in games:
+        raise HTTPException(404, "Game not found")
+    
+    game = games[room_id]
+    players = game["players"]
+    
+    # Reset game state
+    games[room_id] = {
+        "sum": 0,
+        "turn": players[0],  # Start with first player again
+        "players": players,
+        "winner": None
+    }
+    print(f"Game restarted: {room_id} with {players}")
+    return {"message": "restarted", "turn": players[0]}
+
 @app.post("/move")
 async def make_move(req: MoveRequest):
     if req.room_id not in games:

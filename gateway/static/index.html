@@ -4,30 +4,44 @@
     <meta charset="UTF-8">
     <title>Prime Lightning</title>
     <style>
-        body {font-family: Arial; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin: 0; padding: 40px; min-height: 100vh;}
+        body {font-family: 'Segoe UI', Arial; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin: 0; padding: 40px; min-height: 100vh;}
         h1 {font-size: 48px; margin: 20px;}
-        .box {max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px);}
-        input, button {padding: 14px 20px; margin: 10px; font-size: 18px; border: none; border-radius: 12px;}
-        button {background: #ff6b6b; color: white; cursor: pointer;}
-        button:hover {background: #ff5252;}
-        .prime-btn {width: 90px; height: 90px; font-size: 36px; margin: 15px; border-radius: 20px; background: #4ecdc4; color: white; font-weight: bold; transition: 0.3s;}
-        .prime-btn:hover:not(:disabled) {background: #45b7aa; transform: scale(1.1);}
-        .prime-btn:disabled {background: #7f8c8d; opacity: 0.4; cursor: not-allowed;}
-        #status {font-size: 34px; font-weight: bold; margin: 30px; height: 60px;}
+        .box {max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.15); padding: 40px; border-radius: 25px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);}
+        input {padding: 16px; margin: 12px; width: 280px; font-size: 18px; border: none; border-radius: 12px; outline: none;}
+        button {padding: 16px 32px; margin: 12px; font-size: 18px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;}
+        .reg {background: #27ae60; color: white;}
+        .login {background: #3498db; color: white;}
+        button:hover {transform: scale(1.05); opacity: 0.9;}
+        .prime-btn {width: 100px; height: 100px; font-size: 40px; margin: 18px; border-radius: 25px; background: #4ecdc4; color: white; font-weight: bold; box-shadow: 0 8px 20px rgba(0,0,0,0.3);}
+        .prime-btn:hover:not(:disabled) {background: #45b7aa; transform: translateY(-5px);}
+        .prime-btn:disabled {background: #95a5a6; opacity: 0.5; cursor: not-allowed;}
+        #status {font-size: 36px; font-weight: bold; margin: 30px; min-height: 50px;}
         .your-turn {color: #51cf66; animation: pulse 1.5s infinite;}
-        @keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.1)}}
-        .room-info {background: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; margin: 20px; display: none;}
+        @keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.12)}}
+        .error {background: #e74c3c; padding: 15px; border-radius: 12px; margin: 15px; display: none;}
         .hidden {display: none !important;}
+        .room-info {background: rgba(255,255,255,0.25); padding: 20px; border-radius: 15px; margin: 20px; font-size: 20px;}
+        .game-over {background: rgba(255,215,0,0.3); padding: 30px; border-radius: 20px; margin: 30px; border: 3px solid #ffd700;}
+        .game-over h2 {color: #ffd700; font-size: 42px; margin: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
+        .restart-btn {background: #e67e22; color: white; padding: 18px 40px; font-size: 20px; margin-top: 20px;}
+        .restart-btn:hover {background: #d35400; transform: scale(1.1);}
+        .success-msg {background: #27ae60; padding: 15px; border-radius: 12px; margin: 15px; display: none; color: white; font-weight: bold;}
     </style>
 </head>
 <body>
     <div class="box">
         <h1>Prime Lightning – First to 31</h1>
 
-        <div id="login">
-            <input id="username" placeholder="Username"><br><br>
-            <input id="password" type="password" placeholder="Password"><br><br>
-            <button onclick="login()">Register</button> <!-- ← Changed here -->
+        <div id="auth">
+            <h2 style="margin-bottom: 30px;">Welcome to Prime Lightning!</h2>
+            <input id="username" placeholder="Username" autocomplete="off"><br>
+            <input id="password" type="password" placeholder="Password"><br>
+            <div id="errorMsg" class="error"></div>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+                <button class="reg" onclick="register()">📝 Register</button>
+                <button class="login" onclick="login()">🔐 Login</button>
+            </div>
+            <p style="margin-top: 20px; opacity: 0.8; font-size: 14px;">New user? Register first, then login to play!</p>
         </div>
 
         <div id="lobby" style="display:none">
@@ -36,11 +50,9 @@
                 <input id="roomInput" placeholder="Enter Room ID">
                 <button onclick="joinRoom()">Join Room</button>
             </div>
-
-            <div id="roomInfo" class="room-info">
+            <div id="roomInfo" class="room-info hidden">
                 Room Created! Share ID → <strong id="roomIdText"></strong>
             </div>
-
             <h2>Current: <span id="current">0</span> / 31</h2>
             <h3 id="status">Waiting for opponent...</h3>
             <div id="primes"></div>
@@ -48,63 +60,127 @@
     </div>
 
     <script>
-        let ws, username, roomId, isMyTurn = false;
-        const primes = [2, 3, 5, 7, 11];
+        let ws, username;
 
-        function login() {
-            username = document.getElementById("username").value.trim();
-            const pass = document.getElementById("password").value;
-            if (!username || !pass) return alert("Fill both fields");
+        function showError(msg) {
+            const el = document.getElementById("errorMsg");
+            el.textContent = msg;
+            el.style.display = "block";
+            setTimeout(() => el.style.display = "none", 4000);
+        }
 
-            ws = new WebSocket("ws://localhost:8000/ws");
-            ws.onopen = () => ws.send(JSON.stringify({type: "auth", username, password: pass}));
-            ws.onmessage = handleMessage;
+        function showSuccess(msg) {
+            const el = document.getElementById("errorMsg");
+            el.textContent = msg;
+            el.style.background = "#27ae60";
+            el.style.display = "block";
+            setTimeout(() => {
+                el.style.display = "none";
+                el.style.background = "#e74c3c";
+            }, 3000);
+        }
 
-            document.getElementById("login").style.display = "none";
-            document.getElementById("lobby").style.display = "block";
+        async function register() {
+            const u = document.getElementById("username").value.trim();
+            const p = document.getElementById("password").value;
+            if (!u || !p) return showError("Fill both fields");
+            if (u.length < 3) return showError("Username must be at least 3 characters");
+            if (p.length < 3) return showError("Password must be at least 3 characters");
+
+            try {
+                const res = await fetch("/register", {
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                if (res.ok) {
+                    showSuccess("✅ Registered successfully! Now click Login");
+                } else {
+                    const data = await res.json();
+                    showError(data.detail || "Registration failed");
+                }
+            } catch { showError("Server error - make sure services are running"); }
+        }
+
+        async function login() {
+            const u = document.getElementById("username").value.trim();
+            const p = document.getElementById("password").value;
+            if (!u || !p) return showError("Fill both fields");
+
+            try {
+                const res = await fetch("/login", {
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({username: u, password: p})
+                });
+                if (res.ok) {
+                    username = u;
+                    showSuccess("✅ Login successful! Connecting...");
+                    setTimeout(() => {
+                        document.getElementById("auth").style.display = "none";
+                        document.getElementById("lobby").style.display = "block";
+                        ws = new WebSocket("ws://localhost:8000/ws");
+                        ws.onopen = () => {
+                            ws.send(JSON.stringify({type: "auth", username: u, password: p}));
+                            showSuccess("✅ Connected to game server!");
+                        };
+                        ws.onmessage = handleMessage;
+                        ws.onerror = () => showError("WebSocket connection error");
+                    }, 500);
+                } else {
+                    const data = await res.json();
+                    showError(data.detail || "❌ Wrong username or password");
+                }
+            } catch { showError("Cannot connect to server - make sure services are running"); }
         }
 
         function handleMessage(e) {
             const msg = JSON.parse(e.data);
-
+            if (msg.type === "logged_in") console.log("Logged in as", username);
+            if (msg.type === "error") showError("Error: " + msg.message);
             if (msg.type === "room_created") {
-                roomId = msg.room_id;
-                document.getElementById("roomIdText").textContent = roomId;
-                document.getElementById("roomInfo").style.display = "block";
+                document.getElementById("roomIdText").textContent = msg.room_id;
+                document.getElementById("roomInfo").classList.remove("hidden");
                 document.getElementById("roomControls").classList.add("hidden");
             }
-
             if (msg.type === "game_start") {
                 document.getElementById("roomControls").classList.add("hidden");
-                document.getElementById("status").textContent = "Game Started!";
             }
-
             if (msg.type === "update") {
                 document.getElementById("current").textContent = msg.sum;
-                isMyTurn = (msg.turn === username);
-                document.getElementById("status").textContent = isMyTurn ? "YOUR TURN!" : "Waiting for opponent...";
-                document.getElementById("status").className = isMyTurn ? "your-turn" : "";
-                showPrimes(msg.sum);
+                const myTurn = msg.turn === username;
+                document.getElementById("status").textContent = myTurn ? "YOUR TURN!" : "Waiting for opponent...";
+                document.getElementById("status").className = myTurn ? "your-turn" : "";
+                showPrimes(msg.sum, myTurn);
             }
-
             if (msg.type === "game_over") {
-                const won = msg.winner === username;
-                document.getElementById("status").textContent = won ? "YOU WIN!" : msg.winner + " WINS!";
-                document.getElementById("primes").innerHTML = "<h2>GAME OVER</h2>";
+                const isWinner = msg.winner === username;
+                document.getElementById("status").textContent = isWinner ? "🎉 YOU WIN! 🎉" : "😔 " + msg.winner + " WINS!";
+                document.getElementById("status").className = isWinner ? "your-turn" : "";
+                document.getElementById("primes").innerHTML = `
+                    <div class="game-over">
+                        <h2>${isWinner ? "🏆 VICTORY! 🏆" : "Game Over"}</h2>
+                        <p style="font-size: 24px; margin: 20px;">${isWinner ? "Congratulations! You played brilliantly!" : "Better luck next time!"}</p>
+                        <p style="font-size: 18px; opacity: 0.9;">Final Score: <strong>${document.getElementById("current").textContent}</strong> / 31</p>
+                        <button class="restart-btn" onclick="restartGame()">🔄 Play Again</button>
+                    </div>
+                `;
+            }
+            if (msg.type === "game_restarted") {
+                // Game restarted - UI will be updated by the "update" message that follows
+                document.getElementById("roomControls").classList.add("hidden");
             }
         }
 
-        function showPrimes(current) {
+        function showPrimes(sum, myTurn) {
             const div = document.getElementById("primes");
             div.innerHTML = "";
-            primes.forEach(p => {
-                if (current + p <= 31) {
-                    const btn = document.createElement("button");
-                    btn.className = "prime-btn";
-                    btn.textContent = p;
-                    btn.disabled = !isMyTurn;
-                    btn.onclick = () => isMyTurn && ws.send(JSON.stringify({type: "move", prime: p}));
-                    div.appendChild(btn);
+            [2,3,5,7,11].forEach(p => {
+                if (sum + p <= 31) {
+                    const b = document.createElement("button");
+                    b.className = "prime-btn";
+                    b.textContent = p;
+                    b.disabled = !myTurn;
+                    b.onclick = () => myTurn && ws.send(JSON.stringify({type: "move", prime: p}));
+                    div.appendChild(b);
                 }
             });
         }
@@ -113,6 +189,15 @@
         function joinRoom() {
             const id = document.getElementById("roomInput").value.trim();
             if (id) ws.send(JSON.stringify({type: "join_room", room_id: id}));
+        }
+        
+        function restartGame() {
+            // Send restart request to server - server will notify both players
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({type: "restart_game"}));
+            } else {
+                showError("Not connected to server");
+            }
         }
     </script>
 </body>
