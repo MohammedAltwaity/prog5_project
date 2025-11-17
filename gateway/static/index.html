@@ -1,38 +1,58 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Prime Lightning</title>
     <style>
-        body { font-family: Arial; text-align: center; margin-top: 50px; background: #f0f8ff; }
-        input, button { padding: 12px; margin: 8px; font-size: 18px; }
-        .prime-btn { width: 80px; height: 80px; font-size: 28px; margin: 10px; }
-        h1 { color: #2c3e50; }
+        body {font-family: Arial; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin: 0; padding: 40px; min-height: 100vh;}
+        h1 {font-size: 48px; margin: 20px;}
+        .box {max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px);}
+        input, button {padding: 14px 20px; margin: 10px; font-size: 18px; border: none; border-radius: 12px;}
+        button {background: #ff6b6b; color: white; cursor: pointer;}
+        button:hover {background: #ff5252;}
+        .prime-btn {width: 90px; height: 90px; font-size: 36px; margin: 15px; border-radius: 20px; background: #4ecdc4; color: white; font-weight: bold; transition: 0.3s;}
+        .prime-btn:hover:not(:disabled) {background: #45b7aa; transform: scale(1.1);}
+        .prime-btn:disabled {background: #7f8c8d; opacity: 0.4; cursor: not-allowed;}
+        #status {font-size: 34px; font-weight: bold; margin: 30px; height: 60px;}
+        .your-turn {color: #51cf66; animation: pulse 1.5s infinite;}
+        @keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.1)}}
+        .room-info {background: rgba(255,255,255,0.2); padding: 20px; border-radius: 15px; margin: 20px; display: none;}
+        .hidden {display: none !important;}
     </style>
 </head>
 <body>
-    <h1>Prime Lightning – First to 31</h1>
-    
-    <div id="login">
-        <input id="username" placeholder="Username"><br>
-        <input id="password" type="password" placeholder="Password"><br>
-        <button onclick="login()">Register & Play</button>
-    </div>
+    <div class="box">
+        <h1>Prime Lightning – First to 31</h1>
 
-    <div id="lobby" style="display:none">
-        <button onclick="createRoom()">Create Room</button><br><br>
-        <input id="roomInput" placeholder="Enter Room ID">
-        <button onclick="joinRoom()">Join Room</button>
-        <h2>Current: <span id="current">0</span> / 31</h2>
-        <h3 id="status">Waiting for opponent...</h3>
-        <div id="primes"></div>
+        <div id="login">
+            <input id="username" placeholder="Username"><br><br>
+            <input id="password" type="password" placeholder="Password"><br><br>
+            <button onclick="login()">Register</button> <!-- ← Changed here -->
+        </div>
+
+        <div id="lobby" style="display:none">
+            <div id="roomControls">
+                <button onclick="createRoom()">Create Room</button><br><br>
+                <input id="roomInput" placeholder="Enter Room ID">
+                <button onclick="joinRoom()">Join Room</button>
+            </div>
+
+            <div id="roomInfo" class="room-info">
+                Room Created! Share ID → <strong id="roomIdText"></strong>
+            </div>
+
+            <h2>Current: <span id="current">0</span> / 31</h2>
+            <h3 id="status">Waiting for opponent...</h3>
+            <div id="primes"></div>
+        </div>
     </div>
 
     <script>
-        let ws, username, roomId;
+        let ws, username, roomId, isMyTurn = false;
         const primes = [2, 3, 5, 7, 11];
 
         function login() {
-            username = document.getElementById("username").value;
+            username = document.getElementById("username").value.trim();
             const pass = document.getElementById("password").value;
             if (!username || !pass) return alert("Fill both fields");
 
@@ -46,21 +66,31 @@
 
         function handleMessage(e) {
             const msg = JSON.parse(e.data);
+
             if (msg.type === "room_created") {
                 roomId = msg.room_id;
-                alert("Your room ID: " + roomId + " – Share with friend!");
+                document.getElementById("roomIdText").textContent = roomId;
+                document.getElementById("roomInfo").style.display = "block";
+                document.getElementById("roomControls").classList.add("hidden");
             }
-            if (msg.type === "player_joined" || msg.type === "game_start") {
-                document.getElementById("status").innerText = "Game Started!";
-                showPrimes(0);
+
+            if (msg.type === "game_start") {
+                document.getElementById("roomControls").classList.add("hidden");
+                document.getElementById("status").textContent = "Game Started!";
             }
+
             if (msg.type === "update") {
-                document.getElementById("current").innerText = msg.sum;
+                document.getElementById("current").textContent = msg.sum;
+                isMyTurn = (msg.turn === username);
+                document.getElementById("status").textContent = isMyTurn ? "YOUR TURN!" : "Waiting for opponent...";
+                document.getElementById("status").className = isMyTurn ? "your-turn" : "";
                 showPrimes(msg.sum);
             }
+
             if (msg.type === "game_over") {
-                alert("WINNER: " + msg.winner + "!");
-                document.getElementById("primes").innerHTML = "<h2>Game Over</h2>";
+                const won = msg.winner === username;
+                document.getElementById("status").textContent = won ? "YOU WIN!" : msg.winner + " WINS!";
+                document.getElementById("primes").innerHTML = "<h2>GAME OVER</h2>";
             }
         }
 
@@ -69,10 +99,11 @@
             div.innerHTML = "";
             primes.forEach(p => {
                 if (current + p <= 31) {
-                    let btn = document.createElement("button");
+                    const btn = document.createElement("button");
                     btn.className = "prime-btn";
                     btn.textContent = p;
-                    btn.onclick = () => ws.send(JSON.stringify({type: "move", prime: p}));
+                    btn.disabled = !isMyTurn;
+                    btn.onclick = () => isMyTurn && ws.send(JSON.stringify({type: "move", prime: p}));
                     div.appendChild(btn);
                 }
             });
@@ -80,8 +111,8 @@
 
         function createRoom() { ws.send(JSON.stringify({type: "create_room"})); }
         function joinRoom() {
-            roomId = document.getElementById("roomInput").value;
-            ws.send(JSON.stringify({type: "join_room", room_id: roomId}));
+            const id = document.getElementById("roomInput").value.trim();
+            if (id) ws.send(JSON.stringify({type: "join_room", room_id: id}));
         }
     </script>
 </body>
