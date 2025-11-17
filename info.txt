@@ -1,10 +1,197 @@
-#!/bin/tcsh
-# Activate virtual env
-source env/bin/activate.csh
+================================================================================
+                    DISTRIBUTED TWO-PERSON GAME SYSTEM
+                            Prime Challenge
+================================================================================
 
-# Start all services in background
-python -m uvicorn user_service.main:app --port 8001 --reload &
-python -m uvicorn room_service.main:app --port 8002 --reload &
-python -m uvicorn game_service.main:app --port 8003 --reload &
-python -m uvicorn gateway.main:app --port 8000 --reload &
-wait
+PROJECT OVERVIEW:
+-----------------
+This is a distributed microservices-based game system implementing a turn-based
+prime number game where two players take turns adding prime numbers (2, 3, 5, 7, 11)
+to reach exactly 31. The first player to reach 31 or force the opponent into an
+impossible position wins.
+
+ARCHITECTURE:
+------------
+- Gateway Service (port 8000): API Gateway and WebSocket server
+- User Service (port 8001): User authentication and registration
+- Room Service (port 8002): Game room management
+- Game Service (port 8003): Game logic and rules
+
+CLIENTS:
+--------
+- Web Client: Browser-based interface (served by Gateway)
+- CLI Client: Command-line interface (cli_client.py)
+- Mobile Client: (To be implemented)
+
+================================================================================
+                          SETUP INSTRUCTIONS
+================================================================================
+
+STEP 1: CREATE VIRTUAL ENVIRONMENT
+---------------------------------
+Create a Python virtual environment to isolate project dependencies:
+
+    python3 -m venv env
+
+Or if you have Python 3.9+ specifically:
+    python3.9 -m venv env
+
+This creates a directory called "env" containing the virtual environment.
+
+STEP 2: ACTIVATE VIRTUAL ENVIRONMENT
+------------------------------------
+The activation command depends on your shell:
+
+For tcsh/csh shell:
+    source env/bin/activate.csh
+
+For bash/zsh shell:
+    source env/bin/activate
+
+For fish shell:
+    source env/bin/activate.fish
+
+For PowerShell (Windows):
+    env\Scripts\Activate.ps1
+
+After activation, you should see "(env)" in your terminal prompt.
+
+STEP 3: INSTALL DEPENDENCIES
+-----------------------------
+With the virtual environment activated, install all required packages:
+
+    pip install -r requirements.txt
+
+This installs FastAPI, uvicorn, websockets, and all other dependencies.
+
+STEP 4: VERIFY INSTALLATION
+----------------------------
+Check that uvicorn is installed:
+
+    which uvicorn
+    # Should show: .../env/bin/uvicorn
+
+================================================================================
+                          RUNNING THE SERVICES
+================================================================================
+
+OPTION 1: RUN ALL SERVICES AT ONCE (Recommended for Development)
+-----------------------------------------------------------------
+Use the provided script to start all services in the background:
+
+For tcsh/csh:
+    source env/bin/activate.csh
+    ./info.txt
+
+Or manually:
+    source env/bin/activate.csh
+    python -m uvicorn user_service.main:app --port 8001 --reload &
+    python -m uvicorn room_service.main:app --port 8002 --reload &
+    python -m uvicorn game_service.main:app --port 8003 --reload &
+    python -m uvicorn gateway.main:app --port 8000 --reload &
+    wait
+
+For bash/zsh:
+    source env/bin/activate
+    python -m uvicorn user_service.main:app --port 8001 --reload &
+    python -m uvicorn room_service.main:app --port 8002 --reload &
+    python -m uvicorn game_service.main:app --port 8003 --reload &
+    python -m uvicorn gateway.main:app --port 8000 --reload &
+    wait
+
+OPTION 2: RUN EACH SERVICE INDIVIDUALLY (Recommended for Debugging)
+---------------------------------------------------------------------
+Open separate terminal windows/tabs for each service:
+
+Terminal 1 - User Service:
+    source env/bin/activate.csh    # or activate for bash
+    python -m uvicorn user_service.main:app --port 8001 --reload
+
+Terminal 2 - Room Service:
+    source env/bin/activate.csh    # or activate for bash
+    python -m uvicorn room_service.main:app --port 8002 --reload
+
+Terminal 3 - Game Service:
+    source env/bin/activate.csh    # or activate for bash
+    python -m uvicorn game_service.main:app --port 8003 --reload
+
+Terminal 4 - Gateway Service:
+    source env/bin/activate.csh    # or activate for bash
+    python -m uvicorn gateway.main:app --port 8000 --reload
+
+OPTION 3: RUN WITHOUT RELOAD (Production-like)
+-----------------------------------------------
+Remove the --reload flag for production mode:
+
+    python -m uvicorn user_service.main:app --port 8001
+    python -m uvicorn room_service.main:app --port 8002
+    python -m uvicorn game_service.main:app --port 8003
+    python -m uvicorn gateway.main:app --port 8000
+
+================================================================================
+                          ACCESSING THE APPLICATION
+================================================================================
+
+WEB CLIENT:
+-----------
+Open your browser and navigate to:
+    http://localhost:8000
+
+CLI CLIENT:
+-----------
+Run the command-line client:
+    source env/bin/activate.csh    # or activate for bash
+    python cli_client.py
+
+================================================================================
+                          SERVICE ENDPOINTS
+================================================================================
+
+Gateway (port 8000):
+    - http://localhost:8000/          (Web interface)
+    - ws://localhost:8000/ws          (WebSocket)
+    - http://localhost:8000/register   (User registration)
+    - http://localhost:8000/login      (User login)
+
+User Service (port 8001):
+    - http://localhost:8001/register  (POST)
+    - http://localhost:8001/login      (POST)
+
+Room Service (port 8002):
+    - http://localhost:8002/create     (POST)
+    - http://localhost:8002/join       (POST)
+
+Game Service (port 8003):
+    - http://localhost:8003/start      (POST)
+    - http://localhost:8003/move       (POST)
+    - http://localhost:8003/restart    (POST)
+
+================================================================================
+                          TROUBLESHOOTING
+================================================================================
+
+Problem: "Module not found" errors
+Solution: Make sure virtual environment is activated and dependencies are installed
+
+Problem: "Port already in use"
+Solution: Kill the process using the port or change the port number
+
+Problem: Services not communicating
+Solution: Ensure all services are running and check firewall settings
+
+Problem: WebSocket connection fails
+Solution: Make sure gateway service (port 8000) is running
+
+================================================================================
+                          STOPPING SERVICES
+================================================================================
+
+To stop all services:
+    Press Ctrl+C in each terminal, or:
+    pkill -f uvicorn
+
+To stop a specific service:
+    Find the process: lsof -i :8000  (replace 8000 with desired port)
+    Kill it: kill <PID>
+
+================================================================================
