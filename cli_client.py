@@ -1,80 +1,83 @@
-
+# cli_client.py – FINAL VERSION (NO INPUT MESS-UP EVER!)
 import asyncio
-import websockets
 import json
+import websockets
 
 async def main():
-    print("Prime Lightning – First to 31 (CLI Version)")
+    print("Prime Lightning – First to 31")
     print("Allowed primes: 2, 3, 5, 7, 11\n")
 
-    # Connect to gateway
-    async with websockets.connect("ws://localhost:8000/ws") as ws:
-        # 1. Login
-        username = input("Username: ")
-        password = input("Password: ")
-        await ws.send(json.dumps({
-            "type": "auth",
-            "username": username,
-            "password": password
-        }))
-        await ws.recv()  # wait for logged_in
+    ws = await websockets.connect("ws://localhost:8000/ws")
 
-        print(f"\nLogged in as {username}")
-        print("1) Create Room")
-        print("2) Join Room")
-        choice = input("Choose (1 or 2): ")
+    # === LOGIN ===
+    username = input("Username: ")
+    password = input("Password: ")
+    await ws.send(json.dumps({"type": "auth", "username": username, "password": password}))
 
-        room_id = None
+    # Wait for login confirmation
+    while True:
+        msg = json.loads(await ws.recv())
+        if msg["type"] == "logged_in":
+            print(f"\nLogged in as {username}\n")
+            break
 
-        if choice == "1":
-            await ws.send(json.dumps({"type": "create_room"}))
-            msg = json.loads(await ws.recv())
-            room_id = msg["room_id"]
-            print(f"\nRoom created! → Share this ID: {room_id}")
-            print("Waiting for opponent to join...\n")
-        else:
-            room_id = input("Enter Room ID: ")
-            await ws.send(json.dumps({"type": "join_room", "room_id": room_id}))
-            print("Joining room...")
+    # === CREATE OR JOIN ROOM ===
+    choice = input("1) Create Room   2) Join Room → ")
+    room_id = None
 
-        # Game loop
+    if choice.strip() == "1":
+        await ws.send(json.dumps({"type": "create_room"}))
         while True:
-            message = json.loads(await ws.recv())
-
-            if message["type"] == "game_start":
-                print("GAME STARTED! Your turn first!\n" if message["turn"] == username else "Opponent starts!\n")
-
-            elif message["type"] == "update":
-                print(f"Current sum: {message['sum']} / 31")
-                if message["turn"] == username:
-                    print("YOUR TURN! Choose prime:")
-                    possible = [p for p in [2,3,5,7,11] if message['sum'] + p <= 31]
-                    print("Possible moves:", possible if possible else "NONE → You lose!")
-                    if not possible:
-                        print("You can't move → You lose!")
-                        break
-                    while True:
-                        try:
-                            move = int(input(">> "))
-                            if move in possible:
-                                await ws.send(json.dumps({"type": "move", "prime": move}))
-                                break
-                            else:
-                                print("Invalid! Choose from:", possible)
-                        except:
-                            print("Type a number!")
-                else:
-                    print("Opponent is thinking...\n")
-
-            elif message["type"] == "game_over":
-                winner = message["winner"]
-                if winner == username:
-                    print(f"WINNER: YOU WIN! ({winner})")
-                else:
-                    print(f"WINNER: {winner} WINS! You lose.")
+            msg = json.loads(await ws.recv())
+            if msg["type"] == "room_created":
+                room_id = msg["room_id"]
+                print(f"\nRoom created! Share this ID → {room_id}")
+                print("Waiting for opponent...\n")
                 break
+    else:
+        room_id = input("\nEnter Room ID: ")
+        await ws.send(json.dumps({"type": "join_room", "room_id": room_id}))
+        print("Joining room...\n")
 
-        print("\nGame finished. Close window or run again!")
+    # === GAME LOOP – THIS IS THE MAGIC PART ===
+    while True:
+        msg = json.loads(await ws.recv())
 
-# Run it
+        # Only print game messages – ignore duplicates
+        if msg["type"] == "game_start":
+            print("Opponent joined! Game started!\n")
+
+        elif msg["type"] == "update":
+            print(f"Current sum: {msg['sum']} / 31")
+
+            if msg["turn"] == username:
+                possible = [p for p in [2,3,5,7,11] if msg['sum'] + p <= 31]
+                if not possible:
+                    print("No valid moves → You lose!")
+                    break
+
+                print("YOUR TURN! Possible moves:", " ".join(map(str, possible)))
+                while True:
+                    move = input(">> ").strip()
+                    if move.isdigit() and int(move) in possible:
+                        await ws.send(json.dumps({"type": "move", "prime": int(move)}))
+                        print(f"→ You played {move}\n")
+                        break
+                    else:
+                        print("Invalid! Choose from:", " ".join(map(str, possible)))
+            else:
+                print("Opponent's turn...\n")
+
+        elif msg["type"] == "game_over":
+            winner = msg["winner"]
+            if winner == username:
+                print("YOU WIN!")
+            else:
+                print(f"You lose → {winner} wins!")
+            print("\nGame over!")
+            break
+
+    input("\nPress Enter to exit...")
+
+# Run
 asyncio.run(main())
