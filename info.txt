@@ -1,0 +1,10 @@
+#!/bin/tcsh
+# Activate virtual env
+source env/bin/activate.csh
+
+# Start all services in background
+python -m uvicorn user_service.main:app --port 8001 --reload &
+python -m uvicorn room_service.main:app --port 8002 --reload &
+python -m uvicorn game_service.main:app --port 8003 --reload &
+python -m uvicorn gateway.main:app --port 8000 --reload &
+wait

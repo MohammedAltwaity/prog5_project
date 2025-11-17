@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Prime Lightning</title>
+    <style>
+        body { font-family: Arial; text-align: center; margin-top: 50px; background: #f0f8ff; }
+        input, button { padding: 12px; margin: 8px; font-size: 18px; }
+        .prime-btn { width: 80px; height: 80px; font-size: 28px; margin: 10px; }
+        h1 { color: #2c3e50; }
+    </style>
+</head>
+<body>
+    <h1>Prime Lightning – First to 31</h1>
+    
+    <div id="login">
+        <input id="username" placeholder="Username"><br>
+        <input id="password" type="password" placeholder="Password"><br>
+        <button onclick="login()">Register & Play</button>
+    </div>
+
+    <div id="lobby" style="display:none">
+        <button onclick="createRoom()">Create Room</button><br><br>
+        <input id="roomInput" placeholder="Enter Room ID">
+        <button onclick="joinRoom()">Join Room</button>
+        <h2>Current: <span id="current">0</span> / 31</h2>
+        <h3 id="status">Waiting for opponent...</h3>
+        <div id="primes"></div>
+    </div>
+
+    <script>
+        let ws, username, roomId;
+        const primes = [2, 3, 5, 7, 11];
+
+        function login() {
+            username = document.getElementById("username").value;
+            const pass = document.getElementById("password").value;
+            if (!username || !pass) return alert("Fill both fields");
+
+            ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onopen = () => ws.send(JSON.stringify({type: "auth", username, password: pass}));
+            ws.onmessage = handleMessage;
+
+            document.getElementById("login").style.display = "none";
+            document.getElementById("lobby").style.display = "block";
+        }
+
+        function handleMessage(e) {
+            const msg = JSON.parse(e.data);
+            if (msg.type === "room_created") {
+                roomId = msg.room_id;
+                alert("Your room ID: " + roomId + " – Share with friend!");
+            }
+            if (msg.type === "player_joined" || msg.type === "game_start") {
+                document.getElementById("status").innerText = "Game Started!";
+                showPrimes(0);
+            }
+            if (msg.type === "update") {
+                document.getElementById("current").innerText = msg.sum;
+                showPrimes(msg.sum);
+            }
+            if (msg.type === "game_over") {
+                alert("WINNER: " + msg.winner + "!");
+                document.getElementById("primes").innerHTML = "<h2>Game Over</h2>";
+            }
+        }
+
+        function showPrimes(current) {
+            const div = document.getElementById("primes");
+            div.innerHTML = "";
+            primes.forEach(p => {
+                if (current + p <= 31) {
+                    let btn = document.createElement("button");
+                    btn.className = "prime-btn";
+                    btn.textContent = p;
+                    btn.onclick = () => ws.send(JSON.stringify({type: "move", prime: p}));
+                    div.appendChild(btn);
+                }
+            });
+        }
+
+        function createRoom() { ws.send(JSON.stringify({type: "create_room"})); }
+        function joinRoom() {
+            roomId = document.getElementById("roomInput").value;
+            ws.send(JSON.stringify({type: "join_room", room_id: roomId}));
+        }
+    </script>
+</body>
+</html>
