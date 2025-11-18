@@ -85,18 +85,18 @@ For tcsh/csh:
 
 Or manually:
     source env/bin/activate.csh
-    python -m uvicorn user_service.main:app --port 8001 --reload &
-    python -m uvicorn room_service.main:app --port 8002 --reload &
-    python -m uvicorn game_service.main:app --port 8003 --reload &
-    python -m uvicorn gateway.main:app --port 8000 --reload &
+    python -m uvicorn user_service.main:app --host 0.0.0.0 --port 8001 --reload &
+    python -m uvicorn room_service.main:app --host 0.0.0.0 --port 8002 --reload &
+    python -m uvicorn game_service.main:app --host 0.0.0.0 --port 8003 --reload &
+    python -m uvicorn gateway.main:app --host 0.0.0.0 --port 8000 --reload &
     wait
 
 For bash/zsh:
     source env/bin/activate
-    python -m uvicorn user_service.main:app --port 8001 --reload &
-    python -m uvicorn room_service.main:app --port 8002 --reload &
-    python -m uvicorn game_service.main:app --port 8003 --reload &
-    python -m uvicorn gateway.main:app --port 8000 --reload &
+    python -m uvicorn user_service.main:app --host 0.0.0.0 --port 8001 --reload &
+    python -m uvicorn room_service.main:app --host 0.0.0.0 --port 8002 --reload &
+    python -m uvicorn game_service.main:app --host 0.0.0.0 --port 8003 --reload &
+    python -m uvicorn gateway.main:app --host 0.0.0.0 --port 8000 --reload &
     wait
 
 OPTION 2: RUN EACH SERVICE INDIVIDUALLY (Recommended for Debugging)
@@ -105,28 +105,28 @@ Open separate terminal windows/tabs for each service:
 
 Terminal 1 - User Service:
     source env/bin/activate.csh    # or activate for bash
-    python -m uvicorn user_service.main:app --port 8001 --reload
+    python -m uvicorn user_service.main:app --host 0.0.0.0 --port 8001 --reload
 
 Terminal 2 - Room Service:
     source env/bin/activate.csh    # or activate for bash
-    python -m uvicorn room_service.main:app --port 8002 --reload
+    python -m uvicorn room_service.main:app --host 0.0.0.0 --port 8002 --reload
 
 Terminal 3 - Game Service:
     source env/bin/activate.csh    # or activate for bash
-    python -m uvicorn game_service.main:app --port 8003 --reload
+    python -m uvicorn game_service.main:app --host 0.0.0.0 --port 8003 --reload
 
 Terminal 4 - Gateway Service:
     source env/bin/activate.csh    # or activate for bash
-    python -m uvicorn gateway.main:app --port 8000 --reload
+    python -m uvicorn gateway.main:app --host 0.0.0.0 --port 8000 --reload
 
 OPTION 3: RUN WITHOUT RELOAD (Production-like)
 -----------------------------------------------
 Remove the --reload flag for production mode:
 
-    python -m uvicorn user_service.main:app --port 8001
-    python -m uvicorn room_service.main:app --port 8002
-    python -m uvicorn game_service.main:app --port 8003
-    python -m uvicorn gateway.main:app --port 8000
+    python -m uvicorn user_service.main:app --host 0.0.0.0 --port 8001
+    python -m uvicorn room_service.main:app --host 0.0.0.0 --port 8002
+    python -m uvicorn game_service.main:app --host 0.0.0.0 --port 8003
+    python -m uvicorn gateway.main:app --host 0.0.0.0 --port 8000
 
 ================================================================================
                           ACCESSING THE APPLICATION

@@ -2,30 +2,105 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Prime Challenge</title>
     <style>
-        body {font-family: 'Segoe UI', Arial; text-align: center; background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin: 0; padding: 40px; min-height: 100vh;}
-        h1 {font-size: 48px; margin: 20px;}
-        .box {max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.15); padding: 40px; border-radius: 25px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.3);}
-        input {padding: 16px; margin: 12px; width: 280px; font-size: 18px; border: none; border-radius: 12px; outline: none;}
-        button {padding: 16px 32px; margin: 12px; font-size: 18px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold;}
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --glass: rgba(255, 255, 255, 0.16);
+        }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: #fff;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 20px;
+            box-sizing: border-box;
+        }
+        .box {
+            width: min(520px, 100%);
+            background: var(--glass);
+            padding: 40px 32px;
+            border-radius: 28px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        }
+        h1 {
+            margin: 0 0 18px;
+            font-size: clamp(32px, 6vw, 48px);
+            line-height: 1.1;
+        }
+        input {
+            width: 100%;
+            padding: 16px;
+            margin: 10px 0;
+            font-size: 18px;
+            border: none;
+            border-radius: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        button {
+            flex: 1;
+            padding: 16px;
+            font-size: 18px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .actions {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 10px;
+        }
         .reg {background: #27ae60; color: white;}
         .login {background: #3498db; color: white;}
-        button:hover {transform: scale(1.05); opacity: 0.9;}
-        .prime-btn {width: 100px; height: 100px; font-size: 40px; margin: 18px; border-radius: 25px; background: #4ecdc4; color: white; font-weight: bold; box-shadow: 0 8px 20px rgba(0,0,0,0.3);}
-        .prime-btn:hover:not(:disabled) {background: #45b7aa; transform: translateY(-5px);}
-        .prime-btn:disabled {background: #95a5a6; opacity: 0.5; cursor: not-allowed;}
-        #status {font-size: 36px; font-weight: bold; margin: 30px; min-height: 50px;}
+        button:hover {transform: translateY(-2px); opacity: 0.93;}
+
+        #status {font-size: 28px; font-weight: bold; margin: 26px 0 10px; min-height: 42px;}
         .your-turn {color: #51cf66; animation: pulse 1.5s infinite;}
-        @keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.12)}}
-        .error {background: #e74c3c; padding: 15px; border-radius: 12px; margin: 15px; display: none;}
+        @keyframes pulse {0%,100%{transform:scale(1)} 50%{transform:scale(1.05)}}
+
+        #primes {display: flex; flex-wrap: wrap; justify-content: center;}
+        .prime-btn {
+            width: 92px; height: 92px; font-size: 34px; margin: 12px;
+            border-radius: 22px; background: #4ecdc4; color: white; font-weight: bold;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25); border: none;
+        }
+        .prime-btn:hover:not(:disabled) {background: #45b7aa; transform: translateY(-4px);}
+        .prime-btn:disabled {background: #95a5a6; opacity: 0.5; cursor: not-allowed;}
+
+        .room-info {background: rgba(255,255,255,0.25); padding: 18px; border-radius: 18px; margin: 18px 0; font-size: 18px;}
+        .error {background: #e74c3c; padding: 14px; border-radius: 12px; margin: 12px 0; display: none;}
         .hidden {display: none !important;}
-        .room-info {background: rgba(255,255,255,0.25); padding: 20px; border-radius: 15px; margin: 20px; font-size: 20px;}
-        .game-over {background: rgba(255,215,0,0.3); padding: 30px; border-radius: 20px; margin: 30px; border: 3px solid #ffd700;}
-        .game-over h2 {color: #ffd700; font-size: 42px; margin: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
-        .restart-btn {background: #e67e22; color: white; padding: 18px 40px; font-size: 20px; margin-top: 20px;}
-        .restart-btn:hover {background: #d35400; transform: scale(1.1);}
-        .success-msg {background: #27ae60; padding: 15px; border-radius: 12px; margin: 15px; display: none; color: white; font-weight: bold;}
+
+        .game-over {background: rgba(255,215,0,0.3); padding: 30px; border-radius: 24px; margin: 30px 0; border: 3px solid #ffd700;}
+        .game-over h2 {color: #ffd700; font-size: 38px; margin: 14px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
+        .restart-btn {background: #e67e22; color: white; padding: 18px 40px; font-size: 20px; margin-top: 14px;}
+        .restart-btn:hover {background: #d35400; transform: scale(1.05);}
+
+        @media (max-width: 640px) {
+            body {padding: 20px;}
+            .box {padding: 28px 22px; border-radius: 22px;}
+            h1 {font-size: 34px;}
+            .actions {flex-direction: column;}
+            button {width: 100%;}
+            .prime-btn {width: 80px; height: 80px; font-size: 30px;}
+            #status {font-size: 24px;}
+        }
+        @media (max-width: 400px) {
+            .box {padding: 24px 18px;}
+            input {font-size: 16px;}
+            button {font-size: 16px; padding: 14px;}
+            .prime-btn {width: 70px; height: 70px; font-size: 26px; margin: 8px;}
+        }
     </style>
 </head>
 <body>
@@ -37,7 +112,7 @@
             <input id="username" placeholder="Username" autocomplete="off"><br>
             <input id="password" type="password" placeholder="Password"><br>
             <div id="errorMsg" class="error"></div>
-            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
+            <div class="actions">
                 <button class="reg" onclick="register()">Register</button>
                 <button class="login" onclick="login()">Login</button>
             </div>
@@ -60,6 +135,25 @@
     </div>
 
     <script>
+        // Get server URL from Android injection or use default
+        function getServerUrl() {
+            if (window.SERVER_URL) {
+                return window.SERVER_URL;  // From Android injection
+            }
+            return window.location.origin || "http://localhost:8000";  // Desktop default
+        }
+        
+        function getWsUrl() {
+            if (window.WS_URL) {
+                return window.WS_URL;  // From Android injection
+            }
+            const serverUrl = getServerUrl();
+            return serverUrl.replace("http://", "ws://").replace("https://", "wss://");
+        }
+        
+        const SERVER_URL = getServerUrl();
+        const WS_URL = getWsUrl();
+        
         let ws, username;
 
         function showError(msg) {
@@ -88,7 +182,7 @@
             if (p.length < 3) return showError("Password must be at least 3 characters");
 
             try {
-                const res = await fetch("/register", {
+                const res = await fetch(SERVER_URL + "/register", {
                     method: "POST", headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({username: u, password: p})
                 });
@@ -107,7 +201,7 @@
             if (!u || !p) return showError("Fill both fields");
 
             try {
-                const res = await fetch("/login", {
+                const res = await fetch(SERVER_URL + "/login", {
                     method: "POST", headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({username: u, password: p})
                 });
@@ -117,7 +211,7 @@
                     setTimeout(() => {
                         document.getElementById("auth").style.display = "none";
                         document.getElementById("lobby").style.display = "block";
-                        ws = new WebSocket("ws://localhost:8000/ws");
+                        ws = new WebSocket(WS_URL + "/ws");
                         ws.onopen = () => {
                             ws.send(JSON.stringify({type: "auth", username: u, password: p}));
                             showSuccess("✅ Connected to game server!");
