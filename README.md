@@ -1,20 +1,5 @@
 # Prime Challenge - Distributed Two-Person Game System
 
----
-
-## Assignment Required Documentation Overview
-
-This README covers:
-- Technology summary for all microservices and clients
-- Project and architecture description
-- Service-to-service API documentation (REST schemas, responsibilities)
-- WebSocket API communication (full schema and flows, client-server/client)
-- Configuration/run/troubleshooting (info.txt, requirements.txt)
-
-**Refer to the section headers or assignment checklist below for compliance confirmation.**
-
----
-
 ## Technology Summary
 
 | Component         | Programming Language | Frameworks/Libraries                                |
@@ -98,4 +83,44 @@ All inter-service communication flows through the Gateway. Microservices do **no
 | update          | sum, turn    | { "type": "update", "sum": 19, "turn": "bob" }
 | game_over       | winner       | { "type": "game_over", "winner": "alice" }
 | game_restarted  | turn         | { "type": "game_restarted", "turn": "alice" }
-| error           | message      | { "type": "error", "message": "...
+| error           | message      | { "type": "error", "message": "..." }
+
+---
+
+## Setup, Configuration, and Requirements
+
+- **See info.txt** (root directory) for all critical configuration, environment, run commands, and troubleshooting. This file is the authoritative reference for correct environment/platform setup.
+- All Python dependencies are listed in `requirements.txt` and must be installed in your activated virtualenv with `pip install -r requirements.txt`.
+
+---
+
+## Mobile Android App: WebView-Based Approach
+
+The mobile client for Prime Challenge is implemented using Java and the Android SDK. The app utilizes a `WebView` component that loads the full-featured web client UI, which is served by the Gateway service. This approach ensures:
+
+- **Feature Parity:** Mobile users experience the exact same game features as desktop web users, including real-time play and account management.
+- **Efficiency & Maintainability:** All improvements to the web client are instantly reflected on mobile without requiring duplicate native app logic.
+- **Future Extensibility:** The current app acts as a robust proof of concept. It can readily be extended with native Android UX, notifications, or deeper integration if desired.
+
+By utilizing WebView, the Android app provides a seamless, cross-platform gaming experience with rapid updates and minimal mobile-specific maintenance.
+
+---
+
+## Building and Running the Android App (APK)
+
+To use the mobile app on a real device or emulator, you must generate and build the Android installation package (**APK**):
+
+1. **Open the project in Android Studio**:
+   - Navigate to the `mobile_app_android` directory and open the project using Android Studio (free and industry-standard IDE).
+2. **Prepare a device or emulator**:
+   - Connect your Android phone with a USB cable and enable developer mode (or use Android Studio's built-in emulator).
+3. **Build the APK:**
+   - Use the top menu: `Build > Build APK(s)`, or simply press the green 'Run' triangle to compile and launch directly on the device/emulator.
+   - After building, the APK files will be found under `app/build/outputs/apk/` in your project structure.
+4. **Install the APK:**
+   - You can manually copy/install the APK to your Android device, or let Android Studio deploy it automatically.
+
+**Notes:**
+- Building the APK is required each time you want to install a new version on your device, or after changing any Java/Android-side code.
+- Thanks to the WebView approach, updates to the web client UI and game logic become available on mobile instantly, without needing to repackage the APK unless the native code itself is modified.
+- These steps follow industry best practices and ensure smooth deployment and evaluation for all stakeholders, including those new to Android development.
